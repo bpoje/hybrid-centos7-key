@@ -122,20 +122,36 @@ EOF
 echo "partprobe $LOOP"
 partprobe "$LOOP"
 
+#Create filesystem on partitions
+#sudo mkfs.fat -F32 "${LOOP}p1"
+sudo mkdosfs -F32 "${LOOP}p1"
+#sudo mkfs.vfat "${LOOP}p2"
+sudo mkdosfs -F32 "${LOOP}p2"
+#sudo mkfs.fat -F32 "${LOOP}p3"
+sudo mkfs.xfs -f "${LOOP}p3"
+
+
+
+
+#Mount the partitions
+mkdir -pv "${MOUNT_DIR}"/{p1,p2,p3}
+sudo mount "${LOOP}p1" "${MOUNT_DIR}/p1/"
+sudo mount "${LOOP}p2" "${MOUNT_DIR}/p2/"
+sudo mount "${LOOP}p3" "${MOUNT_DIR}/p3/"
+
+#Install Grub
+sudo yum -y install grub2 grub2-efi-modules
+sudo grub2-install --boot-directory="${MOUNT_DIR}/p1/boot" --target=i386-pc "${LOOP}"
+sudo grub2-install --boot-directory="${MOUNT_DIR}/p2/boot" --target=x86_64-efi --efi-directory "${MOUNT_DIR}/p2/boot" --removable "${LOOP}" 
+
 exit 1
 
 #Label parition 3
 #sfdisk --part-label "$LOOP" 3 "$LABEL3"
 
-#Create filesystem on partitions
-sudo mkfs.fat -F32 "${LOOP}p1"
-sudo mkfs.vfat "${LOOP}p2"
-sudo mkfs.fat -F32 "${LOOP}p3"
 
-#Mount the partitions
-mkdir -pv "${MOUNT_DIR}"/{p2,p3}
-sudo mount "${LOOP}p2" "${MOUNT_DIR}/p2/"
-sudo mount "${LOOP}p3" "${MOUNT_DIR}/p3/"
+
+
 
 #Install grub on the two partitions (EFI and non-EFI)
 
