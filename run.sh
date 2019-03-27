@@ -147,6 +147,8 @@ sudo grub2-install --boot-directory="${MOUNT_DIR}/p2/boot" --target=x86_64-efi -
 
 sudo cp grub.cfg "${MOUNT_DIR}/p1/boot/grub2/grub.cfg"
 
+sudo cp grub-uefi.cfg "${MOUNT_DIR}/p2/boot/grub2/grub.cfg"
+
 #Create subfolder for syslinux
 sudo mkdir -p "${MOUNT_DIR}/p1/syslinux"
 sudo cp vesamenu.c32 "${MOUNT_DIR}/p1/syslinux/vesamenu.c32"
