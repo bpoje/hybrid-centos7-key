@@ -6,9 +6,9 @@ init_image() {
 
 IMAGE="image1"
 #SIZE_MIB=22000
-SIZE_MIB=30000
+SIZE_MIB=4000
 MOUNT_DIR="/tmp/usb"
-LABEL3="label3"
+LABEL3="1"
 
 if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root" 
@@ -124,14 +124,15 @@ partprobe "$LOOP"
 
 #Create filesystem on partitions
 #sudo mkfs.fat -F32 "${LOOP}p1"
-sudo mkdosfs -F32 "${LOOP}p1"
+sudo mkdosfs -F16 "${LOOP}p1"
 #sudo mkfs.vfat "${LOOP}p2"
-sudo mkdosfs -F32 "${LOOP}p2"
+sudo mkdosfs -F16 "${LOOP}p2"
 #sudo mkfs.fat -F32 "${LOOP}p3"
 sudo mkfs.xfs -f "${LOOP}p3"
 
-
-
+#Label parition 3
+#sfdisk --part-label "$LOOP" 3 "$LABEL3"
+xfs_admin -L "$LABEL3" "${LOOP}p3"
 
 #Mount the partitions
 mkdir -pv "${MOUNT_DIR}"/{p1,p2,p3}
@@ -144,10 +145,30 @@ sudo yum -y install grub2 grub2-efi-modules
 sudo grub2-install --boot-directory="${MOUNT_DIR}/p1/boot" --target=i386-pc "${LOOP}"
 sudo grub2-install --boot-directory="${MOUNT_DIR}/p2/boot" --target=x86_64-efi --efi-directory "${MOUNT_DIR}/p2/boot" --removable "${LOOP}" 
 
+sudo cp grub.cfg "${MOUNT_DIR}/p1/boot/grub2/grub.cfg"
+
+#Create subfolder for syslinux
+sudo mkdir -p "${MOUNT_DIR}/p1/syslinux"
+sudo cp vesamenu.c32 "${MOUNT_DIR}/p1/syslinux/vesamenu.c32"
+#Copy and rename
+sudo cp isolinux.cfg "${MOUNT_DIR}/p1/syslinux/syslinux.cfg"
+#Need to umount before syslinux installation
+sudo umount "${MOUNT_DIR}/p1"
+sudo syslinux --install "${LOOP}p1" --directory "syslinux"
+
+sudo mount "${LOOP}p1" "${MOUNT_DIR}/p1/"
+
+
+
+cp -rf source/images/ "${MOUNT_DIR}/p3/"
+cp -rf source/.treeinfo "${MOUNT_DIR}/p3/"
+
+sudo rm ./image1.vmdk
+sudo VBoxManage internalcommands createrawvmdk -filename ./image1.vmdk -rawdisk "${LOOP}"
+#sudo umount /tmp/usb/p{,1,2,3}; sudo losetup -d /dev/loop0; rm -f image1
+
 exit 1
 
-#Label parition 3
-#sfdisk --part-label "$LOOP" 3 "$LABEL3"
 
 
 
